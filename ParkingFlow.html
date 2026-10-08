@@ -1,0 +1,1414 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ParkingFlow — Умная парковка</title>
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <!-- Google Fonts Inter -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f8fafc;
+        color: #1e293b;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      main {
+        flex: 1;
+      }
+      .navbar-brand {
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+      .hero-section {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+        color: white;
+        padding: 80px 0;
+      }
+      .card-custom {
+        border: none;
+        border-radius: 1rem;
+        box-shadow:
+          0 4px 6px -1px rgb(0 0 0 / 0.1),
+          0 2px 4px -2px rgb(0 0 0 / 0.1);
+        transition: transform 0.2s;
+      }
+      .card-custom:hover {
+        transform: translateY(-3px);
+      }
+      .parking-spot {
+        height: 90px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+      }
+      .spot-free {
+        background-color: #dcfce7;
+        color: #166534;
+        border-color: #bbf7d0;
+      }
+      .spot-free:hover {
+        background-color: #bbf7d0;
+      }
+      .spot-occupied {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border-color: #fecaca;
+        cursor: not-allowed;
+      }
+      .spot-reserved {
+        background-color: #fef3c7;
+        color: #92400e;
+        border-color: #fde68a;
+      }
+      .page-view {
+        display: none;
+      }
+      .page-view.active {
+        display: block;
+        animation: fadeIn 0.3s ease-in-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1080;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="sticky-top shadow-sm">
+      <nav class="navbar navbar-expand-lg navbar-light bg-white py-3">
+        <div class="container">
+          <a
+            class="navbar-brand text-primary d-flex align-items-center gap-2"
+            href="#home"
+            onclick="navigateTo('home')"
+          >
+            <i class="fa-solid fa-square-parking fa-lg"></i>
+            <span>ParkingFlow</span>
+          </a>
+          <button
+            class="navbar-toggler border-0"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center gap-lg-2">
+              <li class="nav-item">
+                <a
+                  class="nav-link active"
+                  href="#home"
+                  data-page="home"
+                  onclick="navigateTo('home')"
+                  >Главная</a
+                >
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  href="#catalog"
+                  data-page="catalog"
+                  onclick="navigateTo('catalog')"
+                  >Карта и Каталог</a
+                >
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  href="#about"
+                  data-page="about"
+                  onclick="navigateTo('about')"
+                  >О проекте</a
+                >
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  href="#contact"
+                  data-page="contact"
+                  onclick="navigateTo('contact')"
+                  >Контакты</a
+                >
+              </li>
+              <li class="nav-item ms-lg-3" id="authNavContainer">
+                <a
+                  class="btn btn-outline-primary px-4 rounded-pill"
+                  href="#login"
+                  data-page="login"
+                  onclick="navigateTo('login')"
+                  >Войти</a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <!-- 1. HOME PAGE -->
+      <section id="page-home" class="page-view active">
+        <div class="hero-section text-center text-lg-start">
+          <div class="container py-5">
+            <div class="row align-items-center">
+              <div class="col-lg-7 mb-5 mb-lg-0">
+                <span
+                  class="badge bg-primary bg-opacity-25 text-white px-3 py-2 rounded-pill mb-3 fw-medium"
+                  >Умная система парковки</span
+                >
+                <h1 class="display-4 fw-bold mb-4">
+                  Найдите и забронируйте парковку за считанные секунды
+                </h1>
+                <p class="lead text-white-50 mb-4">
+                  Забудьте о долгом поиске мест в центре города или
+                  бизнес-центрах. ParkingFlow экономит ваше время, топливо и
+                  нервы.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                  <button
+                    class="btn btn-primary btn-lg px-4 rounded-pill shadow"
+                    onclick="navigateTo('catalog')"
+                  >
+                    <i class="fa-solid fa-map-location-dot me-2"></i>Смотреть
+                    карту мест
+                  </button>
+                  <button
+                    class="btn btn-outline-light btn-lg px-4 rounded-pill"
+                    onclick="navigateTo('about')"
+                  >
+                    Узнать больше
+                  </button>
+                </div>
+              </div>
+              <div class="col-lg-5">
+                <div class="card card-custom bg-white text-dark p-4">
+                  <h4 class="fw-bold mb-3">
+                    <i class="fa-solid fa-bolt text-warning me-2"></i>Быстрый
+                    поиск
+                  </h4>
+                  <form onsubmit="handleQuickSearch(event)">
+                    <div class="mb-3">
+                      <label class="form-label text-muted small fw-semibold"
+                        >Локация или ТРЦ</label
+                      >
+                      <select class="form-select" id="quickZone">
+                        <option value="all">Все зоны (Центр, ТРЦ)</option>
+                        <option value="Zone A">
+                          Зона A - Бизнес Центр "Plaza"
+                        </option>
+                        <option value="Zone B">Зона B - ТРК "Mega Mall"</option>
+                        <option value="Zone C">
+                          Зона C - Центр города (Уличная)
+                        </option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label text-muted small fw-semibold"
+                        >Дата парковки</label
+                      >
+                      <input
+                        type="date"
+                        class="form-control"
+                        id="quickDate"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      class="btn btn-dark w-100 py-2 rounded-pill fw-semibold"
+                    >
+                      Найти свободные места
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="container py-5 my-5">
+          <div class="text-center mb-5">
+            <h2 class="fw-bold">Почему выбирают ParkingFlow</h2>
+            <p class="text-muted">
+              Инновационный подход к управлению городским пространством
+            </p>
+          </div>
+          <div class="row g-4">
+            <div class="col-md-4">
+              <div class="card card-custom p-4 h-100 bg-white">
+                <div
+                  class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 d-inline-block mb-3"
+                  style="width: fit-content"
+                >
+                  <i class="fa-solid fa-clock fa-xl"></i>
+                </div>
+                <h5 class="fw-bold">Экономия времени</h5>
+                <p class="text-muted mb-0">
+                  Бронируйте место заранее из дома или офиса и приезжайте на
+                  гарантированно свободный участок.
+                </p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card card-custom p-4 h-100 bg-white">
+                <div
+                  class="bg-success bg-opacity-10 text-success p-3 rounded-3 d-inline-block mb-3"
+                  style="width: fit-content"
+                >
+                  <i class="fa-solid fa-shield-halved fa-xl"></i>
+                </div>
+                <h5 class="fw-bold">Безопасная оплата</h5>
+                <p class="text-muted mb-0">
+                  Прозрачные тарифы без скрытых комиссий, защищенные
+                  онлайн-транзакции и электронные чеки.
+                </p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card card-custom p-4 h-100 bg-white">
+                <div
+                  class="bg-warning bg-opacity-10 text-warning p-3 rounded-3 d-inline-block mb-3"
+                  style="width: fit-content"
+                >
+                  <i class="fa-solid fa-chart-line fa-xl"></i>
+                </div>
+                <h5 class="fw-bold">Мониторинг 24/7</h5>
+                <p class="text-muted mb-0">
+                  Актуальный статус каждого парковочного места в реальном
+                  времени благодаря IoT-датчикам.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. CATALOG / MAP PAGE -->
+      <section id="page-catalog" class="page-view">
+        <div class="container py-5">
+          <div class="row mb-4 align-items-center">
+            <div class="col-lg-6">
+              <h2 class="fw-bold mb-1">Интерактивная карта и каталог мест</h2>
+              <p class="text-muted mb-0">
+                Выберите свободное место (зеленое) для бронирования
+              </p>
+            </div>
+            <div class="col-lg-6 text-lg-end mt-3 mt-lg-0">
+              <div class="btn-group" role="group">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary active"
+                  onclick="filterSpots('all', this)"
+                >
+                  Все
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-success"
+                  onclick="filterSpots('free', this)"
+                >
+                  Свободные
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-danger"
+                  onclick="filterSpots('occupied', this)"
+                >
+                  Занятые
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filters & Search Toolbar -->
+          <div class="card card-custom p-3 mb-4 bg-white">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-0"
+                    ><i class="fa-solid fa-search text-muted"></i
+                  ></span>
+                  <input
+                    type="text"
+                    class="form-control border-0 bg-light"
+                    id="spotSearchInput"
+                    placeholder="Поиск по номеру места (например, A-101)..."
+                    oninput="searchSpots()"
+                  />
+                </div>
+              </div>
+              <div class="col-md-6">
+                <select
+                  class="form-select border-0 bg-light"
+                  id="zoneFilterSelect"
+                  onchange="filterSpotsByZone()"
+                >
+                  <option value="all">Все зоны парковки</option>
+                  <option value="Zone A">Зона A - БЦ Plaza</option>
+                  <option value="Zone B">Зона B - ТРК Mega Mall</option>
+                  <option value="Zone C">Зона C - Уличная парковка</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Parking Grid Container -->
+          <div class="row g-3" id="parkingGridContainer">
+            <!-- Dynamic spots will be injected here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. DETAILS & BOOKING PAGE -->
+      <section id="page-details" class="page-view">
+        <div class="container py-5">
+          <button
+            class="btn btn-link text-decoration-none px-0 mb-4 text-muted"
+            onclick="navigateTo('catalog')"
+          >
+            <i class="fa-solid fa-arrow-left me-2"></i>Вернуться к карте
+          </button>
+          <div class="row g-4">
+            <div class="col-lg-7">
+              <div class="card card-custom p-4 bg-white mb-4">
+                <div
+                  class="d-flex justify-content-between align-items-start mb-3"
+                >
+                  <div>
+                    <span
+                      class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill mb-2"
+                      id="detailZone"
+                      >Зона A</span
+                    >
+                    <h2 class="fw-bold mb-0" id="detailSpotTitle">
+                      Место #A-101
+                    </h2>
+                  </div>
+                  <span
+                    class="badge bg-success px-3 py-2 rounded-pill"
+                    id="detailStatusBadge"
+                    >Свободно</span
+                  >
+                </div>
+                <hr class="text-muted opacity-25" />
+                <div class="row g-3 py-2">
+                  <div class="col-sm-6">
+                    <span class="text-muted small d-block"
+                      >Стоимость тарифа</span
+                    >
+                    <h5 class="fw-bold text-primary mb-0" id="detailPriceRate">
+                      150 ₸ / час
+                    </h5>
+                  </div>
+                  <div class="col-sm-6">
+                    <span class="text-muted small d-block">Тип места</span>
+                    <h5 class="fw-bold mb-0">Стандартное / Крытое</h5>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card card-custom p-4 bg-white">
+                <h4 class="fw-bold mb-3">Правила бронирования</h4>
+                <ul class="text-muted small ps-3 mb-0">
+                  <li class="mb-2">
+                    Бронь удерживается в течение 10 минут после указанного
+                    времени начала.
+                  </li>
+                  <li class="mb-2">
+                    Вы можете отменить бронирование бесплатно за 30 минут до
+                    начала сессии.
+                  </li>
+                  <li>
+                    Оплата списывается с привязанной карты или электронного
+                    кошелька после подтверждения.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="col-lg-5">
+              <div class="card card-custom p-4 bg-white">
+                <h4 class="fw-bold mb-4">Оформление брони</h4>
+                <form id="bookingForm" onsubmit="confirmBooking(event)">
+                  <input type="hidden" id="bookingSpotId" />
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted"
+                      >Дата въезда</label
+                    >
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="bookingDate"
+                      required
+                    />
+                  </div>
+                  <div class="row g-2 mb-3">
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold text-muted"
+                        >Время с</label
+                      >
+                      <input
+                        type="time"
+                        class="form-control"
+                        id="bookingTimeStart"
+                        value="10:00"
+                        required
+                        onchange="calculateTotal()"
+                      />
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold text-muted"
+                        >Время по</label
+                      >
+                      <input
+                        type="time"
+                        class="form-control"
+                        id="bookingTimeEnd"
+                        value="12:00"
+                        required
+                        onchange="calculateTotal()"
+                      />
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted"
+                      >Гос. номер автомобиля</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control text-uppercase"
+                      id="bookingCarPlate"
+                      placeholder="A 777 AA 02"
+                      required
+                    />
+                  </div>
+                  <div class="bg-light p-3 rounded-3 mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Продолжительность:</span>
+                      <span class="fw-semibold" id="calcDuration">2 часа</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                      <span class="fw-bold">Итого к оплате:</span>
+                      <span class="fw-bold text-primary fs-5" id="calcTotalSum"
+                        >300 ₸</span
+                      >
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn btn-primary w-100 py-3 rounded-pill fw-semibold shadow"
+                  >
+                    Подтвердить и оплатить
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. ABOUT PAGE -->
+      <section id="page-about" class="page-view">
+        <div class="container py-5">
+          <div class="row justify-content-center">
+            <div class="col-lg-8 text-center mb-5">
+              <span
+                class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-3 fw-medium"
+                >О компании</span
+              >
+              <h1 class="fw-bold mb-3">
+                Мы создаем будущее городской мобильности
+              </h1>
+              <p class="text-muted lead">
+                ParkingFlow — передовая платформа для автоматизации парковочного
+                пространства, решающая проблему пробок и поиска мест.
+              </p>
+            </div>
+          </div>
+          <div class="row g-4 align-items-center mb-5">
+            <div class="col-lg-6">
+              <div class="card card-custom p-4 bg-white h-100">
+                <h3 class="fw-bold mb-3">Наша миссия</h3>
+                <p class="text-muted">
+                  Снизить уровень стресса у водителей в мегаполисах,
+                  оптимизировать загрузку парковок торговых и бизнес-центров, а
+                  также предоставить прозрачный инструмент для администраторов и
+                  владельцев парковочного бизнеса.
+                </p>
+                <p class="text-muted mb-0">
+                  Система объединяет современные IoT-датчики, облачный
+                  мониторинг и удобные мобильные интерфейсы.
+                </p>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="card card-custom p-4 bg-white h-100">
+                <h3 class="fw-bold mb-3">Цифры и факты</h3>
+                <ul class="list-unstyled mb-0">
+                  <li class="d-flex align-items-center mb-3">
+                    <i
+                      class="fa-solid fa-check-circle text-success fa-lg me-3"
+                    ></i>
+                    <span
+                      >Более <strong>500+</strong> парковочных мест подключено к
+                      системе</span
+                    >
+                  </li>
+                  <li class="d-flex align-items-center mb-3">
+                    <i
+                      class="fa-solid fa-check-circle text-success fa-lg me-3"
+                    ></i>
+                    <span
+                      >Экономия до <strong>25 минут</strong> ежедневного времени
+                      водителей</span
+                    >
+                  </li>
+                  <li class="d-flex align-items-center">
+                    <i
+                      class="fa-solid fa-check-circle text-success fa-lg me-3"
+                    ></i>
+                    <span
+                      >100% безопасность платежей и круглосуточная
+                      поддержка</span
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. CONTACT PAGE -->
+      <section id="page-contact" class="page-view">
+        <div class="container py-5">
+          <div class="row justify-content-center mb-5">
+            <div class="col-lg-7 text-center">
+              <span
+                class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-3 fw-medium"
+                >Свяжитесь с нами</span
+              >
+              <h1 class="fw-bold mb-2">Мы на связи 24/7</h1>
+              <p class="text-muted">
+                Есть вопросы по работе сервиса или хотите подключить свою
+                парковку? Напишите нам!
+              </p>
+            </div>
+          </div>
+          <div class="row g-4 justify-content-center">
+            <div class="col-lg-5">
+              <div class="card card-custom p-4 bg-white h-100">
+                <h4 class="fw-bold mb-4">Контакты</h4>
+                <div class="d-flex align-items-start mb-4">
+                  <div
+                    class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3"
+                  >
+                    <i class="fa-solid fa-location-dot"></i>
+                  </div>
+                  <div>
+                    <span class="text-muted small d-block">Адрес офиса</span>
+                    <span class="fw-semibold"
+                      >г. Алматы, ул. Такая-то 123, БЦ Такой-то</span
+                    >
+                  </div>
+                </div>
+                <div class="d-flex align-items-start mb-4">
+                  <div
+                    class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3"
+                  >
+                    <i class="fa-solid fa-phone"></i>
+                  </div>
+                  <div>
+                    <span class="text-muted small d-block"
+                      >Телефон поддержки</span
+                    >
+                    <span class="fw-semibold">+7 (777) 777-77-77</span>
+                  </div>
+                </div>
+                <div class="d-flex align-items-start">
+                  <div
+                    class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3"
+                  >
+                    <i class="fa-solid fa-envelope"></i>
+                  </div>
+                  <div>
+                    <span class="text-muted small d-block">Email</span>
+                    <span class="fw-semibold">support@parkingflow.kz</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="card card-custom p-4 bg-white">
+                <h4 class="fw-bold mb-3">Написать сообщение</h4>
+                <form onsubmit="handleContactSubmit(event)">
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted"
+                      >Ваше имя</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Иван"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted"
+                      >Электронная почта</label
+                    >
+                    <input
+                      type="email"
+                      class="form-control"
+                      placeholder="ivan@example.com"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted"
+                      >Сообщение</label
+                    >
+                    <textarea
+                      class="form-control"
+                      rows="4"
+                      placeholder="Ваш вопрос или предложение..."
+                      required
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn btn-primary w-100 py-2 rounded-pill fw-semibold"
+                  >
+                    Отправить сообщение
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. LOGIN / REGISTER PAGE -->
+      <section id="page-login" class="page-view">
+        <div class="container py-5">
+          <div class="row justify-content-center">
+            <div class="col-md-5">
+              <div class="card card-custom p-4 bg-white">
+                <div class="text-center mb-4">
+                  <h3 class="fw-bold" id="authFormTitle">Вход в систему</h3>
+                  <p class="text-muted small" id="authFormSubtitle">
+                    Введите данные своей учетной записи
+                  </p>
+                </div>
+                <form id="authFormElement" onsubmit="handleAuthSubmit(event)">
+                  <div
+                    class="mb-3"
+                    id="nameFieldContainer"
+                    style="display: none"
+                  >
+                    <label class="form-label small fw-semibold text-muted"
+                      >Имя</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="authName"
+                      placeholder="Введите имя"
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted"
+                      >Email</label
+                    >
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="authEmail"
+                      placeholder="name@example.com"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted"
+                      >Пароль</label
+                    >
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="authPassword"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn btn-primary w-100 py-2 rounded-pill fw-semibold mb-3"
+                    id="authSubmitBtn"
+                  >
+                    Войти
+                  </button>
+                  <div class="text-center">
+                    <a
+                      href="#"
+                      class="text-decoration-none small text-muted"
+                      id="authToggleText"
+                      onclick="toggleAuthMode(event)"
+                      >Нет аккаунта? Зарегистрироваться</a
+                    >
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. PROFILE PAGE -->
+      <section id="page-profile" class="page-view">
+        <div class="container py-5">
+          <div class="row">
+            <div class="col-lg-4 mb-4">
+              <div class="card card-custom p-4 bg-white text-center">
+                <div
+                  class="bg-primary bg-opacity-10 text-primary rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+                  style="width: 80px; height: 80px; font-size: 32px"
+                >
+                  <i class="fa-solid fa-user"></i>
+                </div>
+                <h4 class="fw-bold mb-1" id="profileUserName">Иван Петров</h4>
+                <p class="text-muted small mb-3" id="profileUserEmail">
+                  user@parkingflow.kz
+                </p>
+                <span
+                  class="badge bg-success bg-opacity-10 text-success py-2 px-3 rounded-pill mx-auto mb-4"
+                  id="profileUserRole"
+                  >Статус: Клиент</span
+                >
+                <button
+                  class="btn btn-outline-danger w-100 rounded-pill"
+                  onclick="handleLogout()"
+                >
+                  Выйти из аккаунта
+                </button>
+              </div>
+            </div>
+            <div class="col-lg-8">
+              <div class="card card-custom p-4 bg-white mb-4">
+                <h4 class="fw-bold mb-3">Активные бронирования</h4>
+                <div id="activeBookingsContainer">
+                  <!-- Dynamic active bookings -->
+                </div>
+              </div>
+              <div class="card card-custom p-4 bg-white">
+                <h4 class="fw-bold mb-3">История сессий</h4>
+                <div class="table-responsive">
+                  <table class="table align-middle">
+                    <thead>
+                      <tr class="text-muted small">
+                        <th>Место</th>
+                        <th>Дата</th>
+                        <th>Время</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                      <!-- Dynamic history -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-white border-top py-4 mt-auto">
+      <div
+        class="container text-center text-md-start d-md-flex justify-content-between align-items-center"
+      >
+        <p class="text-muted small mb-3 mb-md-0">
+          © 2026 ParkingFlow, Острельгин Артур Константинович. Все права
+          защищены.
+        </p>
+        <div class="d-flex justify-content-center gap-3 text-muted">
+          <a
+            href="#about"
+            onclick="navigateTo('about')"
+            class="text-decoration-none text-muted small"
+            >О нас</a
+          >
+          <a
+            href="#contact"
+            onclick="navigateTo('contact')"
+            class="text-decoration-none text-muted small"
+            >Поддержка</a
+          >
+          <a
+            href="#catalog"
+            onclick="navigateTo('catalog')"
+            class="text-decoration-none text-muted small"
+            >Карта</a
+          >
+        </div>
+      </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container">
+      <div
+        id="liveToast"
+        class="toast align-items-center text-white bg-dark border-0 shadow"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="d-flex">
+          <div class="toast-body" id="toastMessage">Сообщение системы...</div>
+          <button
+            type="button"
+            class="btn-close btn-close-white me-2 m-auto"
+            data-bs-dismiss="toast"
+            aria-label="Close"
+          ></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // Initial mock parking spots (10-20 objects required by TZ)
+      const initialSpots = [
+        {
+          id: "A-101",
+          zone: "Zone A",
+          status: "free",
+          price: 150,
+          type: "standard",
+        },
+        {
+          id: "A-102",
+          zone: "Zone A",
+          status: "occupied",
+          price: 150,
+          type: "standard",
+        },
+        {
+          id: "A-103",
+          zone: "Zone A",
+          status: "reserved",
+          price: 150,
+          type: "standard",
+        },
+        {
+          id: "A-104",
+          zone: "Zone A",
+          status: "free",
+          price: 150,
+          type: "standard",
+        },
+        {
+          id: "A-105",
+          zone: "Zone A",
+          status: "free",
+          price: 180,
+          type: "vip",
+        },
+        {
+          id: "B-201",
+          zone: "Zone B",
+          status: "free",
+          price: 200,
+          type: "standard",
+        },
+        {
+          id: "B-202",
+          zone: "Zone B",
+          status: "occupied",
+          price: 200,
+          type: "standard",
+        },
+        {
+          id: "B-203",
+          zone: "Zone B",
+          status: "free",
+          price: 200,
+          type: "standard",
+        },
+        {
+          id: "B-204",
+          zone: "Zone B",
+          status: "reserved",
+          price: 220,
+          type: "vip",
+        },
+        {
+          id: "B-205",
+          zone: "Zone B",
+          status: "free",
+          price: 200,
+          type: "standard",
+        },
+        {
+          id: "C-301",
+          zone: "Zone C",
+          status: "free",
+          price: 100,
+          type: "street",
+        },
+        {
+          id: "C-302",
+          zone: "Zone C",
+          status: "occupied",
+          price: 100,
+          type: "street",
+        },
+        {
+          id: "C-303",
+          zone: "Zone C",
+          status: "free",
+          price: 100,
+          type: "street",
+        },
+        {
+          id: "C-304",
+          zone: "Zone C",
+          status: "free",
+          price: 100,
+          type: "street",
+        },
+        {
+          id: "C-305",
+          zone: "Zone C",
+          status: "occupied",
+          price: 100,
+          type: "street",
+        },
+      ];
+
+      // App state
+      let parkingSpots =
+        JSON.parse(localStorage.getItem("parkingFlow_spots")) || initialSpots;
+      let currentUser =
+        JSON.parse(localStorage.getItem("parkingFlow_currentUser")) || null;
+      let userBookings = JSON.parse(
+        localStorage.getItem("parkingFlow_bookings"),
+      ) || [
+        {
+          id: "BOK-901",
+          spotId: "A-103",
+          date: "2026-06-10",
+          timeStart: "14:00",
+          timeEnd: "16:00",
+          total: 300,
+          status: "Активна",
+        },
+      ];
+      let isRegisterMode = false;
+
+      // Initialize App on load
+      window.addEventListener("DOMContentLoaded", () => {
+        renderParkingGrid(parkingSpots);
+        updateAuthNav();
+        // Set default date inputs to today
+        const todayStr = new Date().toISOString().split("T")[0];
+        const quickDateEl = document.getElementById("quickDate");
+        const bookingDateEl = document.getElementById("bookingDate");
+        if (quickDateEl) quickDateEl.value = todayStr;
+        if (bookingDateEl) bookingDateEl.value = todayStr;
+      });
+
+      // Navigation Controller
+      function navigateTo(pageId) {
+        // Hide all pages
+        document
+          .querySelectorAll(".page-view")
+          .forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".navbar-nav .nav-link")
+          .forEach((el) => el.classList.remove("active"));
+
+        // Show target page
+        const target = document.getElementById("page-" + pageId);
+        if (target) {
+          target.classList.add("active");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        // Highlight nav link
+        const navLink = document.querySelector(
+          `.navbar-nav .nav-link[data-page="${pageId}"]`,
+        );
+        if (navLink) {
+          navLink.classList.add("active");
+        }
+
+        // If navigating to profile, render profile data
+        if (pageId === "profile") {
+          if (!currentUser) {
+            showToast("Пожалуйста, войдите в систему");
+            navigateTo("login");
+            return;
+          }
+          renderProfileData();
+        }
+      }
+
+      // Render Parking Grid
+      function renderParkingGrid(spotsToRender) {
+        const container = document.getElementById("parkingGridContainer");
+        if (!container) return;
+        container.innerHTML = "";
+
+        if (spotsToRender.length === 0) {
+          container.innerHTML = `<div class="col-12 text-center py-5 text-muted">Парковочные места не найдены</div>`;
+          return;
+        }
+
+        spotsToRender.forEach((spot) => {
+          let statusClass = "spot-free";
+          let statusText = "Свободно";
+          if (spot.status === "occupied") {
+            statusClass = "spot-occupied";
+            statusText = "Занято";
+          } else if (spot.status === "reserved") {
+            statusClass = "spot-reserved";
+            statusText = "Забронировано";
+          }
+
+          const col = document.createElement("div");
+          col.className = "col-6 col-md-4 col-lg-3";
+          col.innerHTML = `
+                    <div class="parking-spot ${statusClass}" onclick="handleSpotClick('${spot.id}')">
+                        <span class="fs-5">${spot.id}</span>
+                        <small class="opacity-75">${spot.price} ₸/ч • ${statusText}</small>
+                    </div>
+                `;
+          container.appendChild(col);
+        });
+      }
+
+      // Spot Click Handler
+      function handleSpotClick(spotId) {
+        const spot = parkingSpots.find((s) => s.id === spotId);
+        if (!spot) return;
+
+        if (spot.status !== "free") {
+          showToast(
+            `Место ${spotId} в данный момент недоступно (${spot.status === "occupied" ? "занято" : "забронировано"})`,
+          );
+          return;
+        }
+
+        // Populate details page
+        document.getElementById("detailZone").innerText = spot.zone;
+        document.getElementById("detailSpotTitle").innerText =
+          `Место #${spot.id}`;
+        document.getElementById("detailPriceRate").innerText =
+          `${spot.price} ₸ / час`;
+        document.getElementById("bookingSpotId").value = spot.id;
+
+        calculateTotal();
+        navigateTo("details");
+      }
+
+      // Calculate Booking Total
+      function calculateTotal() {
+        const spotId = document.getElementById("bookingSpotId").value;
+        const spot = parkingSpots.find((s) => s.id === spotId);
+        const rate = spot ? spot.price : 150;
+
+        const start = document.getElementById("bookingTimeStart").value;
+        const end = document.getElementById("bookingTimeEnd").value;
+
+        if (start && end) {
+          const [startH, startM] = start.split(":").map(Number);
+          const [endH, endM] = end.split(":").map(Number);
+          let diffHours = endH + endM / 60 - (startH + startM / 60);
+          if (diffHours <= 0) diffHours += 24; // Handle overnight if needed
+
+          const total = Math.round(diffHours * rate);
+          document.getElementById("calcDuration").innerText =
+            `${diffHours.toFixed(1)} ч.`;
+          document.getElementById("calcTotalSum").innerText = `${total} ₸`;
+        }
+      }
+
+      // Confirm Booking Submission
+      function confirmBooking(e) {
+        e.preventDefault();
+        if (!currentUser) {
+          showToast("Для бронирования необходимо войти в систему");
+          navigateTo("login");
+          return;
+        }
+
+        const spotId = document.getElementById("bookingSpotId").value;
+        const date = document.getElementById("bookingDate").value;
+        const timeStart = document.getElementById("bookingTimeStart").value;
+        const timeEnd = document.getElementById("bookingTimeEnd").value;
+        const totalText = document.getElementById("calcTotalSum").innerText;
+
+        // Update spot status
+        const spotIndex = parkingSpots.findIndex((s) => s.id === spotId);
+        if (spotIndex !== -1) {
+          parkingSpots[spotIndex].status = "reserved";
+          localStorage.setItem(
+            "parkingFlow_spots",
+            JSON.stringify(parkingSpots),
+          );
+        }
+
+        // Add booking record
+        const newBooking = {
+          id: "BOK-" + Math.floor(100 + Math.random() * 900),
+          spotId: spotId,
+          date: date,
+          timeStart: timeStart,
+          timeEnd: timeEnd,
+          total: totalText,
+          status: "Активна",
+        };
+
+        userBookings.unshift(newBooking);
+        localStorage.setItem(
+          "parkingFlow_bookings",
+          JSON.stringify(userBookings),
+        );
+
+        showToast(`Место ${spotId} успешно забронировано!`);
+        renderParkingGrid(parkingSpots);
+        navigateTo("profile");
+      }
+
+      // Filtering spots
+      function filterSpots(status, btnElement) {
+        // Update buttons active state
+        const group = btnElement.parentElement;
+        group
+          .querySelectorAll("button")
+          .forEach((b) => b.classList.remove("active"));
+        btnElement.classList.add("active");
+
+        if (status === "all") {
+          renderParkingGrid(parkingSpots);
+        } else {
+          const filtered = parkingSpots.filter((s) => s.status === status);
+          renderParkingGrid(filtered);
+        }
+      }
+
+      function filterSpotsByZone() {
+        const zone = document.getElementById("zoneFilterSelect").value;
+        if (zone === "all") {
+          renderParkingGrid(parkingSpots);
+        } else {
+          const filtered = parkingSpots.filter((s) => s.zone === zone);
+          renderParkingGrid(filtered);
+        }
+      }
+
+      function searchSpots() {
+        const query = document
+          .getElementById("spotSearchInput")
+          .value.toLowerCase();
+        const filtered = parkingSpots.filter((s) =>
+          s.id.toLowerCase().includes(query),
+        );
+        renderParkingGrid(filtered);
+      }
+
+      function handleQuickSearch(e) {
+        e.preventDefault();
+        navigateTo("catalog");
+      }
+
+      // Auth & Profile Management
+      function toggleAuthMode(e) {
+        e.preventDefault();
+        isRegisterMode = !isRegisterMode;
+        const title = document.getElementById("authFormTitle");
+        const subtitle = document.getElementById("authFormSubtitle");
+        const nameContainer = document.getElementById("nameFieldContainer");
+        const submitBtn = document.getElementById("authSubmitBtn");
+        const toggleText = document.getElementById("authToggleText");
+
+        if (isRegisterMode) {
+          title.innerText = "Регистрация";
+          subtitle.innerText = "Создайте новый аккаунт в ParkingFlow";
+          nameContainer.style.display = "block";
+          submitBtn.innerText = "Зарегистрироваться";
+          toggleText.innerText = "Уже есть аккаунт? Войти";
+        } else {
+          title.innerText = "Вход в систему";
+          subtitle.innerText = "Введите данные своей учетной записи";
+          nameContainer.style.display = "none";
+          submitBtn.innerText = "Войти";
+          toggleText.innerText = "Нет аккаунта? Зарегистрироваться";
+        }
+      }
+
+      function handleAuthSubmit(e) {
+        e.preventDefault();
+        const email = document.getElementById("authEmail").value;
+        const name = isRegisterMode
+          ? document.getElementById("authName").value
+          : "Иван Петров";
+
+        currentUser = { name, email, role: "Клиент" };
+        localStorage.setItem(
+          "parkingFlow_currentUser",
+          JSON.stringify(currentUser),
+        );
+
+        updateAuthNav();
+        showToast(`Добро пожаловать, ${name}!`);
+        navigateTo("profile");
+      }
+
+      function handleLogout() {
+        currentUser = null;
+        localStorage.removeItem("parkingFlow_currentUser");
+        updateAuthNav();
+        showToast("Вы вышли из системы");
+        navigateTo("home");
+      }
+
+      function updateAuthNav() {
+        const container = document.getElementById("authNavContainer");
+        if (currentUser) {
+          container.innerHTML = `<a class="btn btn-primary px-4 rounded-pill" href="#profile" data-page="profile" onclick="navigateTo('profile')"><i class="fa-solid fa-user me-2"></i>Личный кабинет</a>`;
+        } else {
+          container.innerHTML = `<a class="btn btn-outline-primary px-4 rounded-pill" href="#login" data-page="login" onclick="navigateTo('login')">Войти</a>`;
+        }
+      }
+
+      function renderProfileData() {
+        if (!currentUser) return;
+        document.getElementById("profileUserName").innerText = currentUser.name;
+        document.getElementById("profileUserEmail").innerText =
+          currentUser.email;
+
+        // Render active bookings
+        const activeContainer = document.getElementById(
+          "activeBookingsContainer",
+        );
+        const activeList = userBookings.filter((b) => b.status === "Активна");
+
+        if (activeList.length === 0) {
+          activeContainer.innerHTML = `<p class="text-muted small">У вас нет активных бронирований</p>`;
+        } else {
+          activeContainer.innerHTML = activeList
+            .map(
+              (b) => `
+                    <div class="border rounded-3 p-3 mb-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary mb-1">Место #${b.spotId}</span>
+                            <h6 class="fw-bold mb-0">${b.date} с ${b.timeStart} по ${b.timeEnd}</h6>
+                            <small class="text-muted">Сумма: ${b.total}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="cancelBooking('${b.id}', '${b.spotId}')">Отменить</button>
+                    </div>
+                `,
+            )
+            .join("");
+        }
+
+        // Render history table
+        const historyBody = document.getElementById("historyTableBody");
+        historyBody.innerHTML = userBookings
+          .map(
+            (b) => `
+                <tr>
+                    <td class="fw-semibold">#${b.spotId}</td>
+                    <td>${b.date}</td>
+                    <td>${b.timeStart} - ${b.timeEnd}</td>
+                    <td class="fw-semibold text-primary">${b.total}</td>
+                    <td><span class="badge ${b.status === "Активна" ? "bg-success" : "bg-secondary"} bg-opacity-10 text-${b.status === "Активна" ? "success" : "secondary"} px-2 py-1">${b.status}</span></td>
+                </tr>
+            `,
+          )
+          .join("");
+      }
+
+      function cancelBooking(bookingId, spotId) {
+        // Update booking status
+        const bIndex = userBookings.findIndex((b) => b.id === bookingId);
+        if (bIndex !== -1) {
+          userBookings[bIndex].status = "Отменена";
+          localStorage.setItem(
+            "parkingFlow_bookings",
+            JSON.stringify(userBookings),
+          );
+        }
+
+        // Free up spot
+        const sIndex = parkingSpots.findIndex((s) => s.id === spotId);
+        if (sIndex !== -1) {
+          parkingSpots[sIndex].status = "free";
+          localStorage.setItem(
+            "parkingFlow_spots",
+            JSON.stringify(parkingSpots),
+          );
+        }
+
+        showToast("Бронирование отменено");
+        renderProfileData();
+        renderParkingGrid(parkingSpots);
+      }
+
+      function handleContactSubmit(e) {
+        e.preventDefault();
+        showToast("Спасибо! Ваше сообщение успешно отправлено.");
+        e.target.reset();
+      }
+
+      // Toast Helper
+      function showToast(message) {
+        const toastEl = document.getElementById("liveToast");
+        document.getElementById("toastMessage").innerText = message;
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+      }
+    </script>
+  </body>
+</html>
