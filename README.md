@@ -58,3 +58,8 @@ That's it. The app runs entirely in the browser.
 ## Author
 
 Arost235 — github.com/Arost235
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE)
+file for details.
